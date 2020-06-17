@@ -1,0 +1,96 @@
+######## NOTE Setup and Running #############
+I just created 3 services 
+Services : product-service , order-service  and audit-service
+
+Create 3 database for each services  before start service
+
+#CREATE DATABASE products_database CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+#GRANT ALL PRIVILEGES ON products_database.* TO 'root'@'%';
+
+#CREATE DATABASE audit_database CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+#GRANT ALL PRIVILEGES ON audit_database.* TO 'root'@'%';
+
+##CREATE DATABASE orders_database CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+##GRANT ALL PRIVILEGES ON orders_database.* TO 'root'@'%';
+
+
+The services communication by Http protocal and messagebus by kafka
+For audit purpose i implementing by cross check on the interceptor and send to kafka messageBus after that audit-service listen form kafka
+For the testing i just implement simple case on the order-service.
+
+For implement service i'm using java8 , reactJava 2.0 springboot2....
+Services are running by nonblocking/blocking IO...
+
+###### Start Kafka #################
+cd ~/kafka-docker/
+to start kafka just only use  docker-compose up
+
+Step 1> download kafka from confluent
+Step 2> cd to Your kafka/bin foldel have just downloaded on step 1
+
+./kafka kafka-topics.sh --bootstrap-server  kafka:9092 --list
+
+./kafka kafka-topics.sh --bootstrap-server kafka:9092 --create --topic audit-service-topic --partitions 1 --replication-factor 1
+
+./kafka-topics.sh --bootstrap-server kafka:9092 --describe --topic audit-service-topic
+
+./kafka kafka-console-producer.sh --broker-list kafka:9092 --topic audit-service-topic
+
+./kafka-console-consumer.sh --bootstrap-server kafka:9092 --topic audit-service-topic --from-beginning
+
+######################################## Starting Curl #########################
+curl --location --request GET 'http://kafka:8080/api/v1/product?page=0&size=10' \
+-H 'Content-Type: application/json' -u user:password
+
+#############################
+curl --location --request POST 'http://kafka:8080/api/v1/product' \
+--header 'Content-Type: application/json' \
+--data '{
+    "code": "S005",
+    "name": "Core Java",
+    "price": "100"
+}' -u user:password
+
+##########################
+curl --location --request GET 'http://kafka:8080/api/v1/product/8' \
+-H 'Content-Type: application/json' -u user:password
+
+##################
+
+
+curl --location --request PUT 'http://kafka:8080/api/v1/product/338' \
+--header 'Content-Type: application/json' \
+--data '{
+    "firstName": "dung 1",
+    "lastName": "phan 3sss",
+    "emailId": "dung.phan11@email.com"
+}'  -u user:password
+
+
+##################
+
+curl --location --request DELETE  'http://localhost:8080/api/v1/product/8' \
+-H 'Content-Type: application/json'  -u user:password
+
+
+################
+curl --location --request GET 'http://localhost:8082/api/v1/order/list?page=0&size=10' \
+-H 'Content-Type: application/json' -u user:password
+
+#######################
+
+
+curl --location --request POST 'http://localhost:8082/api/v1/orderdetail/create' \
+--header 'Content-Type: application/json' \
+--data '{
+    "amount": "5000",
+    "price": "6000",
+    "quantity": "2",
+    "order_id": "123",
+    "productId": "16",
+    "customerAddress": "viet nam",
+    "customerEmail": "custemorEmail@mail.com",
+    "customerName": "my name",
+    "customerPhone": "123456781111"
+
+}' -u user:password
